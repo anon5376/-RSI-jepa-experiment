@@ -1,0 +1,19 @@
+{
+  "seed": 7,
+  "train_trajectories": 24,
+  "test_trajectories": 8,
+  "steps": 8,
+  "signal_dims": 12,
+  "distractor_dims": 8,
+  "hidden_dim": 32,
+  "embedding_dim": 8,
+  "epochs": 3,
+  "batch_size": 48,
+  "lr": 0.001,
+  "ema": 0.99,
+  "variance_weight": 1.0,
+  "covariance_weight": 0.02,
+  "observation_noise": 0.04,
+  "background": "dynamic",
+  "use_actions": true
+}
