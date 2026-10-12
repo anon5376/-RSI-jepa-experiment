@@ -1,161 +1,81 @@
 # RSI JEPA Experiment
 
-An independent research sandbox for **Joint-Embedding Predictive Architectures (JEPA)** and small, reproducible representation/world-model experiments.
+> **Public, reproducible research on latent predictive models.** Small experiments first; measured comparisons instead of AGI claims.
 
-**Status:** bootstrap instructions only. No JEPA implementation, successful installation, authenticated session, benchmark results, or always-on worker is claimed yet.
+This repository explores **Joint-Embedding Predictive Architectures (JEPA)** and their limitations, beginning with a tiny CPU-first temporal benchmark. It has real executable code and tests; it is **not** a reproduction of Meta I-JEPA/V-JEPA and does not currently implement recursive self-improvement, a general-purpose conversational AI, or an autonomous training service.
 
-## Launch in your own cloud terminal (fastest login route)
+**Status (12 October 2026):** A runnable synthetic action-conditioned temporal JEPA baseline, tests, research review, and bounded GitHub Actions jobs. See [`research/RESEARCH_NOTES.md`](research/RESEARCH_NOTES.md) for primary sources and what the baseline actually tests. Pilot metrics appear in `reports/` with provenance and limitations.
 
-**[Open or resume this public repository in GitHub Codespaces](https://codespaces.new/anon5376/-RSI-jepa-experiment?quickstart=1)**
+## Architecture
 
-Follow **[CLOUD_SETUP.md](CLOUD_SETUP.md)** to install Devin CLI, personally authenticate inside your own browser-based terminal, and keep private credentials out of Git. This provides direct terminal control in your GitHub account; it does not expose the ChatGPT execution machine. Codespaces has inactivity and 12-hour runtime limits and is not a free guaranteed 24/7 server.
+```text
+Synthetic dynamical environment             Ground-truth state
+  observation(t) + action(t)                   |   (probe only)
+       |                                      v
+  student encoder ──> z(t) ────> frozen linear probe
+       |                  |
+       |          + action(t)
+       |                  v
+       |             predictor
+       |                  | z_pred(t+1)
+       |                  v
+       |             JEPA loss   <── stop-gradient z_teacher(t+1)
+       |                                      ^
+  EMA student weights ──> target encoder <── observation(t+1)
 
-## Start here (Codex, Claude, Devin, Pi agents)
+  + variance/covariance anti-collapse penalties on student embeddings
+```
 
-1. Read [AGENTS.md](AGENTS.md) and this README before touching code.
-2. Inspect the checkout and report the current state rather than assuming code already exists.
-3. **First operational task:** prepare Devin CLI in the user's own terminal/environment and explicitly **hand control to the user for authentication**. Never attempt to sign in for the user.
-4. After the user confirms login, work on the smallest reproducible JEPA baseline, not a giant speculative platform.
+The **coding agent** (Claude, Codex, Devin CLI or Pi) writes and analyzes Python experiments; the **JEPA network** learns predictive embeddings. They are different systems. Connecting them via JSON experiment outputs does not turn JEPA into a text-generating assistant.
 
-The intended arrangement is:
+## Run it locally
 
-~~~text
-Human researcher
-  | objectives, approvals, sign-in, reviews
-  v
-Coding agent: Devin CLI (SWE-2) OR Claude/Codex
-  | writes and tests Python; records results in Git
-  v
-Python JEPA experiment (CPU first; optional GPU)
-  | embeddings, latent predictions, metrics, checkpoints
-  v
-Reports/experiments/benchmarks in this repository
+Requires Python 3.10+ and PyTorch 2.x. No paid APIs, downloads of pretrained checkpoints, GPU, human data or login are necessary.
 
-Optional: Pi coding harness (separately authenticated supported model)
-  | orchestrates reproducible Python runs and tools
-  +-- NOT an assumed direct SWE-2 API client
-~~~
+```bash
+python -m venv .venv
+source .venv/bin/activate
+# Install PyTorch appropriate to your device: https://pytorch.org/get-started/locally/
+python -m pip install -e '.[test]'
+python -m pytest -q
+python -m jepa_lab --config configs/smoke.json --output reports/smoke.json
+python -m jepa_lab --config configs/baseline.json --output reports/baseline.json
+```
 
-**Technical boundary:** JEPA is self-supervised latent/representation prediction, not a drop-in language-model chat runtime. The coding LLM may *design, call, train, evaluate, and inspect* a local JEPA implementation; JEPA does not thereby become the coding LLM. Connect components through files/CLI/structured outputs first. No claim of JEPA replacing an LLM without actual evidence.
+Run a bounded 3-seed research matrix (nine runs, potentially several minutes on CPU):
 
-## 1. Devin CLI installation and human takeover
+```bash
+python scripts/run_matrix.py --config configs/baseline.json --seeds 7 19 43 --output reports/pilot-matrix.json
+```
 
-The user said "Devin SL"; this bootstrap assumes **Devin CLI**, the official terminal agent, not an unrelated product. Official references: [Devin CLI Quickstart](https://docs.devin.ai/cli), [Commands & Flags](https://docs.devin.ai/cli/reference/commands).
+Override individual conditions:
 
-**For agents operating in a user-controlled macOS/Linux/WSL terminal:**
+```bash
+python -m jepa_lab --config configs/baseline.json --seed 19 --background fixed --output reports/fixed-19.json
+python -m jepa_lab --config configs/baseline.json --seed 19 --no-actions --output reports/no-actions-19.json
+```
 
-- First verify the environment: `pwd`, `uname -a`, `command -v devin`, `git status --short`. Do not assume a hosted/temporary cloud shell will persist.
-- If `devin` is missing, the official installation command is:
+Outputs are schema-versioned JSON with configuration, PyTorch version, CPU metadata, training losses, linear probes, latent prediction errors and embedding spread. Train/test trajectories are disjoint. Labels from the hidden simulated state are **not** used to train the JEPA encoder: only a downstream frozen-feature probe sees them.
 
-~~~bash
-curl -fsSL https://cli.devin.ai/install.sh | bash
-~~~
+## CI and reproducibility
 
-Prefer reviewing the downloaded official installer before execution when practical. After installation, restart the shell or update PATH as instructed by the installer, and check:
+- [CPU smoke workflow](.github/workflows/ci.yml): unit tests + a small reproducible experiment on push/PR.
+- [Bounded experiment workflow](.github/workflows/experiment.yml): **manual trigger only**, six CPU jobs spanning three seeds and two nuisance regimes, saving metric artifacts. No unattended agent, no secret credentials and no training on each PR.
+- [`EXPERIMENTS.md`](EXPERIMENTS.md) captures hypotheses, controls, measured outcomes and failures.
+- [`AGENTS.md`](AGENTS.md) contains the agent execution policy. [`CLAUDE.md`](CLAUDE.md) points Claude at the same rules.
 
-~~~bash
-devin --version
-devin auth status
-~~~
+## Pilot interpretation
 
-**Stop at the authentication checkpoint.** The agent must give the interactive terminal / user-facing session back to the **human owner**, with this exact next command:
+**Don't optimize for training loss alone.** A representation can predict a constant or persistent background with very low loss while losing information about the simulated underlying state. This project's key measurement is the *held-out* frozen-embedding state probe compared to random features and raw observations. The fixed-background condition tests shortcut learning. Differences among conditions require repeated seeds and defensible analysis.
 
-~~~bash
-devin auth login --force-manual-token-flow
-~~~
+The phrase **RSI** in the project title describes a research direction. No recursively self-improving AI is implemented or evidenced by these measurements.
 
-This is the documented remote/SSH option; on a desktop the user can instead run `devin auth login`. Any browser link, token, redirect, password, 2FA challenge or other credential must be completed/entered **by the human privately**, never posted in GitHub, an agent conversation, terminal transcript, screenshots or logs. If the agent environment does not permit a real human terminal takeover, **stop and report that blocker**. Do not pretend authentication succeeded or attempt to automate account ownership transfer. The agent may resume only after the user confirms that login was completed.
+## Optional coding-agent infrastructure
 
-After the user has authenticated, verify **only non-secret status**:
+Devin CLI, Pi and Codespaces setup are documented separately in [`CLOUD_SETUP.md`](CLOUD_SETUP.md). Those integrations are **optional** and not required to run or reproduce these experiments. Do not put credentials in this public repository. No 24/7 hosted agent is currently running, and the CLI model promotion does not establish free indefinite cloud compute.
 
-~~~bash
-devin auth status
-devin models list
-devin
-~~~
+## Academic sources
 
-Within interactive Devin, use `/model` to select **SWE-2**, if the logged-in account actually offers it. Do not invent a CLI model slug or silently fall back to another paid model. Confirm the selected model and cost/free status in the account before launching large workloads.
+Start with [I-JEPA (CVPR 2023)](https://openaccess.thecvf.com/content/CVPR2023/html/Assran_Self-Supervised_Learning_From_Images_With_a_Joint-Embedding_Predictive_Architecture_CVPR_2023_paper.html), [V-JEPA 2 (2025)](https://arxiv.org/abs/2506.09985), [V-JEPA 2.1 (2026)](https://arxiv.org/abs/2603.14482), [VICReg (2021)](https://arxiv.org/abs/2105.04906), [LeJEPA (2025)](https://arxiv.org/abs/2511.08544), and [JEPA slow-feature failures (2022)](https://arxiv.org/abs/2211.10831). The [research note](research/RESEARCH_NOTES.md) explains each connection and caveat.
 
-**Promo checkpoint (verified 12 Oct 2026):** [Devin's official pricing page](https://devin.ai/pricing) advertises free SWE-2 **in Devin Desktop and CLI through 16 October 2026** on qualifying paid plans. This does **not** prove free Devin Cloud sessions, lifetime unlimited service, API access, or availability after that date. Account, rate, quota, concurrency and provider terms remain binding. The agent must not bypass quotas, rotate accounts to evade limits, or activate paid usage without explicit permission.
-
-Devin's `/handoff` can send a local session into Devin Cloud; this is **not** equivalent to keeping the CLI SWE-2 promotion in effect, nor a guarantee of 24/7 operation. Verify cloud pricing, execution lifetime and persistence separately before using `/handoff` or `devin --cloud`.
-
-## 2. Optional Pi harness (preferred for an extensible research loop)
-
-Pi is useful as a small, inspectable coding-agent shell for controlling local Python tools, notebooks/scripts and experiment records. **Do not assume SWE-2 is callable from Pi:** a supported SWE-2 endpoint and authentication mechanism have not been established; Devin CLI is the supported SWE-2 interface in this plan.
-
-Official [Pi Quickstart](https://pi.dev/docs/latest/quickstart) on macOS/Linux:
-
-~~~bash
-curl -fsSL https://pi.dev/install.sh | sh
-pi
-~~~
-
-Alternative if Node.js 22.19+ is available:
-
-~~~bash
-npm install -g --ignore-scripts @earendil-works/pi-coding-agent
-pi
-~~~
-
-Inside Pi, the **human** should use `/login` for a supported provider and `/model` to choose a model. See [Pi model configuration](https://pi.dev/docs/latest/models). When Pi runs in a remote shell, the human must complete its OAuth/device/browser prompts. Never store API keys in project files.
-
-**Choice:** Use Devin CLI for the temporary SWE-2 experiment now. Use Pi **later or alongside it** for a reproducible, model-agnostic harness with a legitimately supported provider. Hermes is not necessary for the first JEPA experiment. Don't build a custom multi-agent harness before a baseline runs.
-
-## 3. Research objectives and measurable milestones
-
-Phase A — **reproducible minimal JEPA** (small synthetic sequences, CPU only):
-- Implement a context encoder, target/teacher encoder (e.g. EMA), predictor, masked target selection, and stop-gradient target branch in PyTorch or a justified equivalent.
-- Start with synthetic latent dynamics with known ground truth, fixed seeds, deterministic splits and pinned dependencies. Verify that inputs/targets don't leak across train/test.
-- Compare against trivial last-state/mean, linear regression, and comparably sized supervised/MLP predictive baselines.
-- Log predicted-target embedding loss, embedding variance/collapse diagnostics, held-out prediction error and downstream linear-probe accuracy/regression error with at least 3 seeds. Report wall time, hardware and memory.
-- Run an ablation without predictive training or without meaningful masking to test what JEPA contributes. Stop if results are indistinguishable from trivial baselines.
-
-Phase B — **meaningful small-world model**:
-- Move from toy sequence data to a simple controllable dynamical process or a modest public time-series/video representation task.
-- Test whether learned embeddings support state estimation and multi-step latent prediction better than baseline methods.
-- Maintain a separation between **observation**, **latent state**, **prediction** and **action/control**. Do not claim planning or understanding until measured.
-
-Phase C — **agent integration**:
-- Make a local `python -m jepa_lab ...` CLI (arguments and subcommands to be implemented and documented) that executes training/evaluation and writes structured, schema-versioned JSON metrics.
-- Have the coding agent propose a hypothesis, choose a bounded compute budget, run experiments, compare outcomes, and append a factual log entry in `EXPERIMENTS.md`.
-- Investigate a Pi extension only after these CLI contracts work. Never force JEPA into a text-generation API.
-
-Recommended layout **once code is created**:
-
-~~~text
-src/jepa_lab/       # dataset/model/training/evaluation modules
-tests/              # deterministic unit and smoke tests
-configs/            # versioned small experiments
-reports/            # human-readable summaries and metrics
-EXPERIMENTS.md      # dated hypothesis, config, seed, result, next step
-pyproject.toml      # pinned Python dependencies
-~~~
-
-Don't commit datasets, large checkpoints, secrets or raw provider transcripts. Don't invent results. If compute/GPU is unavailable, run a tiny CPU experiment and state limitations.
-
-## 4. Limited autonomous operation
-
-The user's long-term goal is cloud-hosted work, potentially around the clock. Treat this as a **future infrastructure milestone**, not a claim about today's environment.
-
-Before unattended execution, establish: (1) a persistent host independent of ephemeral chat sessions, (2) explicit human approval of the host, credential method, charges and quotas, (3) a cancellable job supervisor with hard time/spend/compute ceilings, (4) durable Git commits and artifacts, (5) monitoring, checkpoints, and clear failure stop conditions. Avoid infinite prompting, permission bypasses and automatic purchases. A time-limited model promotion does not fund continuous hosting, remote GPU compute or Devin Cloud execution.
-
-A reasonable first cycle is **one hypothesis -> one testable code change -> unit/smoke tests -> one small experiment -> report -> commit**, not uncontrolled 24/7 model calls.
-
-## 5. First agent response expected
-
-Report succinctly:
-1. Repository, OS, available Python/CPU/GPU and installed `devin`/`pi` binaries.
-2. Whether the user can take over the *same* interactive terminal for Devin login; if yes, display `devin auth login --force-manual-token-flow` and **pause** at the checkpoint.
-3. Confirmed SWE-2 availability and price *after human login* only.
-4. The exact next smallest implementation milestone and test command.
-5. Any constraints on cloud lifetime, network, rate limits or billing.
-
-## Official references
-
-- Devin CLI: https://docs.devin.ai/cli
-- Devin CLI commands/auth: https://docs.devin.ai/cli/reference/commands
-- Devin model/pricing offer: https://devin.ai/pricing
-- Pi installation: https://pi.dev/docs/latest/quickstart
-- Pi providers/models: https://pi.dev/docs/latest/models
-- Meta I-JEPA research: https://ai.meta.com/research/publications/self-supervised-learning-from-images-with-a-joint-embedding-predictive-architecture/
+**Licensing:** Public visibility is not an open-source license. No reuse license has been selected by the repository owner.
