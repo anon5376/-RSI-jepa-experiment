@@ -1,0 +1,33 @@
+# Python caches and local tooling
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+.ipynb_checkpoints/
+.DS_Store
+
+# Local secrets and provider authentication
+.env
+.env.*
+!.env.example
+**/auth.json
+**/credentials.json
+**/token.json
+**/secrets.json
+
+# Generated machine-learning artifacts and downloaded data
+/data/
+/runs/
+/outputs/
+/checkpoints/
+*.ckpt
+*.pth
+*.pt
+*.safetensors
+*.onnx
+*.gguf
+
+# Experiment metrics and short reports belong in /reports/ and EXPERIMENTS.md
