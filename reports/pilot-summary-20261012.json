@@ -1,0 +1,140 @@
+{
+  "schema_version": 1,
+  "status": "measured_local_cpu_pilot",
+  "generated_utc": "2026-10-12T14:21:03Z",
+  "tested_environment": {
+    "python": "3.13.5",
+    "torch": "2.10.0+cpu",
+    "device": "cpu",
+    "platform": "Linux-6.18.44-x86_64-with-glibc2.41"
+  },
+  "command": "PYTHONPATH=src python scripts/run_matrix.py --config configs/baseline.json --seeds 7 19 43 --output reports/pilot-matrix-20261012.json",
+  "dataset": "synthetic controlled 2D latent dynamics mapped to 20D noisy observation; train/test trajectories disjoint",
+  "seeds": [
+    7,
+    19,
+    43
+  ],
+  "conditions": {
+    "dynamic_actions": {
+      "background": "dynamic",
+      "use_actions": true
+    },
+    "dynamic_no_actions": {
+      "background": "dynamic",
+      "use_actions": false
+    },
+    "fixed_actions": {
+      "background": "fixed",
+      "use_actions": true
+    }
+  },
+  "metrics_description": {
+    "r2": "out-of-sample linear probe recovering hidden state; frozen feature encoder",
+    "pred_gain": "1 - MSE(predictor, teacher_next_embedding) / MSE(student_current_embedding, teacher_next_embedding); within-run only",
+    "std": "sample standard deviation across three independent seeds"
+  },
+  "runs": [
+    {
+      "condition": "dynamic_actions",
+      "seed": 7,
+      "r2": 0.93818583,
+      "random_r2": 0.64614176,
+      "raw_r2": 0.9632726,
+      "pred_gain": 0.50833631
+    },
+    {
+      "condition": "dynamic_actions",
+      "seed": 19,
+      "r2": 0.94442585,
+      "random_r2": 0.692577,
+      "raw_r2": 0.96098437,
+      "pred_gain": 0.5522908
+    },
+    {
+      "condition": "dynamic_actions",
+      "seed": 43,
+      "r2": 0.89134772,
+      "random_r2": 0.70244074,
+      "raw_r2": 0.94115097,
+      "pred_gain": 0.52812505
+    },
+    {
+      "condition": "dynamic_no_actions",
+      "seed": 7,
+      "r2": 0.93463819,
+      "random_r2": 0.64614176,
+      "raw_r2": 0.9632726,
+      "pred_gain": 0.47395635
+    },
+    {
+      "condition": "dynamic_no_actions",
+      "seed": 19,
+      "r2": 0.9388413,
+      "random_r2": 0.692577,
+      "raw_r2": 0.96098437,
+      "pred_gain": 0.50314617
+    },
+    {
+      "condition": "dynamic_no_actions",
+      "seed": 43,
+      "r2": 0.87358911,
+      "random_r2": 0.70244074,
+      "raw_r2": 0.94115097,
+      "pred_gain": 0.49273223
+    },
+    {
+      "condition": "fixed_actions",
+      "seed": 7,
+      "r2": 0.83379185,
+      "random_r2": 0.6287524,
+      "raw_r2": 0.95608995,
+      "pred_gain": 0.8004483
+    },
+    {
+      "condition": "fixed_actions",
+      "seed": 19,
+      "r2": 0.89524869,
+      "random_r2": 0.66797731,
+      "raw_r2": 0.96340923,
+      "pred_gain": 0.81351411
+    },
+    {
+      "condition": "fixed_actions",
+      "seed": 43,
+      "r2": 0.80855488,
+      "random_r2": 0.706555,
+      "raw_r2": 0.94349107,
+      "pred_gain": 0.8347646
+    }
+  ],
+  "summary": {
+    "dynamic_actions": {
+      "r2_mean": 0.924653,
+      "r2_sample_std": 0.029012,
+      "random_r2_mean": 0.680387,
+      "raw_r2_mean": 0.955136,
+      "pred_gain_mean": 0.529584
+    },
+    "dynamic_no_actions": {
+      "r2_mean": 0.91569,
+      "r2_sample_std": 0.036521,
+      "random_r2_mean": 0.680387,
+      "raw_r2_mean": 0.955136,
+      "pred_gain_mean": 0.489945
+    },
+    "fixed_actions": {
+      "r2_mean": 0.845865,
+      "r2_sample_std": 0.04459,
+      "random_r2_mean": 0.667762,
+      "raw_r2_mean": 0.95433,
+      "pred_gain_mean": 0.816242
+    }
+  },
+  "limitations": [
+    "Only three seeds and a designed synthetic environment.",
+    "Different conditions learn different target embeddings. Compare predictive loss only within a run, never as raw cross-model MSE.",
+    "JEPA representation does not outperform raw-observation probe here.",
+    "Outcomes do not show general intelligence or autonomous improvement."
+  ]
+}
