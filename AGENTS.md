@@ -1,37 +1,28 @@
-# Instructions for Codex, Devin, Pi, and other coding agents
+# Agent instructions: RSI JEPA Experiment
 
-**Read `README.md` first.** This project is a JEPA research experiment, initially an empty repository. No code, scientific success, login, or persistent worker exists unless verified in the current checkout/environment.
+Always read `README.md` and `research/RESEARCH_NOTES.md` before changing code. This is a **public research repo** with a runnable temporal JEPA-inspired baseline. Do not mistake it for a Meta model reproduction, an AGI system or a deployed 24/7 agent.
 
-## Immediate priority: get the human onto Devin CLI safely
+## Priorities
 
-1. Read the repository and inspect installed tools, OS, shell, and resource limits. Check `git status --short`.
-2. Follow `README.md` section "Devin CLI installation and human takeover"; the user explicitly wants setup information so that **they** can personally log in.
-3. Use only the documented installer from `https://cli.devin.ai/install.sh` on a suitable user-controlled environment if Devin CLI is absent. If your host does not permit persistent installation, report the obstacle rather than pretending.
-4. **Hand control to the user at the authentication prompt**. Suggest `devin auth login --force-manual-token-flow` for remote terminals (or `devin auth login` with a local browser). Stop. Never ask the user to paste a password, token, authentication link containing a token, or 2FA secret into your context. Never perform the human login yourself.
-5. Only after the user confirms login, verify `devin auth status` and `devin models list`, then let the user select SWE-2 in `/model` if their entitlement allows it. Never assume model selection or pricing.
-6. Proceed to the minimum reproducible JEPA baseline only when the login handoff is resolved or when the user explicitly chooses to skip Devin.
+1. **Scientific correctness over more code:** run unit tests, reproduce pilot results and report negative outcomes. Prefer controlled, falsifiable experiments over building agent infrastructure.
+2. **Preserve reproducibility:** fixed seeds, train/test trajectories disjoint, explicit configuration, schema-versioned metrics, recording environment, real links to primary sources. Treat hidden simulator states as *evaluation labels only*; don't leak them into JEPA training.
+3. **Use honest comparators:** frozen random encoder, raw observation probe, persistence predictor, no-action ablation and fixed/dynamic nuisance. Never compare unnormalized embedding losses from different target encoders as if they share a scale.
+4. **Stay small:** CPU-first, no unnecessary downloads, no silent paid provider calls, no training on private data. Bounded runs and killable processes; no indefinite autonomous loops.
+5. **Make only verified claims:** measured run outcome, exact test commands, files changed and unsolved failures. No SOTA/AGI/recursive self-improvement claims without evidence.
 
-## Research execution rules
+## Working commands
 
-- Prefer Python, PyTorch, a small local CLI, and reproducible automated tests; CPU-first and fixed random seeds.
-- Keep JEPA (latent representation prediction) distinct from the coding agent (LLM). Do not claim latent vectors by themselves constitute a natural-language assistant.
-- Implement the simplest scientifically defensible experiment first, with baselines and collapse checks. Tests and exact configurations accompany claims.
-- Commit small logical changes. Record hypotheses, controls, commands, seeds, metrics, failures, and conclusions in `EXPERIMENTS.md`; only include measured numbers.
-- Before external model downloads, GPU runs, paid endpoints, large installations or a remote persistent service, check budget, permissions and environment.
-- No fabricated citations, measurements, benchmarks or installation status.
-- For each completed task: describe files changed, commands run, tests passing/failing, remaining blockers and the next objective.
+```bash
+python -m pip install -e '.[test]'
+python -m pytest -q
+python -m jepa_lab --config configs/smoke.json --output reports/smoke.json
+python scripts/run_matrix.py --config configs/baseline.json --seeds 7 19 43 --output reports/pilot-matrix.json
+```
 
-## Agent/harness boundaries
+CI runs smoke only; the multi-seed GitHub Actions workflow is manually dispatched and bounded. Do not alter it to an always-on loop without explicit owner permission. If adding configuration or metrics, update both tests and README.
 
-- Devin CLI is the **verified** interactive SWE-2 path. Current free promotion is limited to qualifying Desktop/CLI usage through 2026-10-16, subject to account eligibility and actual terms. It does not imply a free SWE-2 API or free Devin Cloud compute.
-- Pi is a separate optional harness. Install from `pi.dev` and use only a supported authorized provider. Do not invent a SWE-2 Pi adapter/API; demonstrate a legitimate provider connection before integrating.
-- Hermes and any custom distributed harness are deferred until the Python experiment has a repeatable interface.
-- A 24/7 loop requires an approved persistent runner, meaningful tasks, hard stop conditions, compute/time/usage budgets, checkpointing and logs; don't start an unrestricted unattended loop or bypass rate limits.
-- Never commit `.env`, authentication files, model-service credentials, personal identifiers, large downloaded weights, full chat transcripts or sensitive URLs.
-- Repository may be public. Treat all content as public until visibility is verified. Avoid posting private infrastructure details.
+## Agent ownership and authentication
 
-## Collaboration conventions
+Never solicit passwords, 2FA codes, session tokens or privileged OAuth links in chat, logs or this repo. Devin CLI / Pi setup is an **optional** owner-controlled workflow in `CLOUD_SETUP.md`. It is not a prerequisite for experiments. The human owner completes authentication in their own terminal if they elect to use these tools. Never bypass provider quotas or publish their authentication materials.
 
-- `AGENTS.md` is the instruction source for Codex and compatible tools; `CLAUDE.md` points Claude to the same rules. Keep them in sync conceptually.
-- If these rules conflict with a human request in the active session, ask for clarification on security, billing or publishing consequences instead of silently weakening controls.
-- Do not modify/delete previous results just to produce a positive experiment outcome.
+For every contribution, state (a) hypothesis, (b) exact change and (c) measured before/after and tests; retain failed experiments. GitHub is public; don't commit `.env`, private code, weights/datasets or local auth state.
