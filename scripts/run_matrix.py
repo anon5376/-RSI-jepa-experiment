@@ -44,8 +44,8 @@ def main() -> None:
     for condition in CONDITIONS:
         group = [run["metrics"] for run in runs if run["condition"] == condition]
         summary[condition] = {field: {"mean": statistics.mean(row[field] for row in group),
-                                     "std": statistics.stdev(row[field] for row in group)
-                                     if len(group) > 1 else None}
+                                       "std": statistics.stdev(row[field] for row in group)
+                                       if len(group) > 1 else None}
                               for field in fields}
     report = {"schema_version": 1, "status": "measured",
               "generated_at_utc": datetime.now(timezone.utc).isoformat(),
