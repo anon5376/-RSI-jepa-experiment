@@ -24,19 +24,19 @@ jobs:
           python -m pip install -e .
       - name: Train with actions and report measurements
         env:
-          SEED: \${{ matrix.seed }}
-          BACKGROUND: \${{ matrix.background }}
+          SEED: ${{ matrix.seed }}
+          BACKGROUND: ${{ matrix.background }}
         run: |
-          python -m jepa_lab --config configs/baseline.json --seed "$SEED" --background "$BACKGROUND" --output "reports/seed-\${SEED}-\${BACKGROUND}-actions.json"
+          python -m jepa_lab --config configs/baseline.json --seed "$SEED" --background "$BACKGROUND" --output "reports/seed-${SEED}-${BACKGROUND}-actions.json"
       - name: Train without actions and report measurements
         if: matrix.background == 'dynamic'
         env:
-          SEED: \${{ matrix.seed }}
-          BACKGROUND: \${{ matrix.background }}
+          SEED: ${{ matrix.seed }}
+          BACKGROUND: ${{ matrix.background }}
         run: |
-          python -m jepa_lab --config configs/baseline.json --seed "$SEED" --background "$BACKGROUND" --no-actions --output "reports/seed-\${SEED}-\${BACKGROUND}-no-actions.json"
+          python -m jepa_lab --config configs/baseline.json --seed "$SEED" --background "$BACKGROUND" --no-actions --output "reports/seed-${SEED}-${BACKGROUND}-no-actions.json"
       - uses: actions/upload-artifact@v4
         with:
-          name: metrics-\${{ matrix.seed }}-\${{ matrix.background }}
+          name: metrics-${{ matrix.seed }}-${{ matrix.background }}
           path: reports/*.json
           retention-days: 7
