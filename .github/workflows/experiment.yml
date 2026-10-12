@@ -1,0 +1,42 @@
+name: JEPA bounded research sweep
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sweep:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        seed: [7, 19, 43]
+        background: [dynamic, fixed]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install CPU dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -e .
+      - name: Train with actions and report measurements
+        env:
+          SEED: \${{ matrix.seed }}
+          BACKGROUND: \${{ matrix.background }}
+        run: |
+          python -m jepa_lab --config configs/baseline.json --seed "$SEED" --background "$BACKGROUND" --output "reports/seed-\${SEED}-\${BACKGROUND}-actions.json"
+      - name: Train without actions and report measurements
+        if: matrix.background == 'dynamic'
+        env:
+          SEED: \${{ matrix.seed }}
+          BACKGROUND: \${{ matrix.background }}
+        run: |
+          python -m jepa_lab --config configs/baseline.json --seed "$SEED" --background "$BACKGROUND" --no-actions --output "reports/seed-\${SEED}-\${BACKGROUND}-no-actions.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: metrics-\${{ matrix.seed }}-\${{ matrix.background }}
+          path: reports/*.json
+          retention-days: 7
