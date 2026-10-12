@@ -4,6 +4,12 @@ An independent research sandbox for **Joint-Embedding Predictive Architectures (
 
 **Status:** bootstrap instructions only. No JEPA implementation, successful installation, authenticated session, benchmark results, or always-on worker is claimed yet.
 
+## Launch in your own cloud terminal (fastest login route)
+
+**[Open or resume this public repository in GitHub Codespaces](https://codespaces.new/anon5376/-RSI-jepa-experiment?quickstart=1)**
+
+Follow **[CLOUD_SETUP.md](CLOUD_SETUP.md)** to install Devin CLI, personally authenticate inside your own browser-based terminal, and keep private credentials out of Git. This provides direct terminal control in your GitHub account; it does not expose the ChatGPT execution machine. Codespaces has inactivity and 12-hour runtime limits and is not a free guaranteed 24/7 server.
+
 ## Start here (Codex, Claude, Devin, Pi agents)
 
 1. Read [AGENTS.md](AGENTS.md) and this README before touching code.
