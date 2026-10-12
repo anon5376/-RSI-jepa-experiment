@@ -1,16 +1,17 @@
-# Claude environment startup instructions
+# Claude / Codex startup: RSI JEPA Experiment
 
-This repository is the **RSI JEPA Experiment**.
+Read `AGENTS.md`, `README.md` and `research/RESEARCH_NOTES.md` first. These specify the current code, scientific controls, trusted sources and research boundaries.
 
-**At the beginning of every Claude/Codex session:** read `AGENTS.md` and `README.md` and follow them. They are the source of truth for the project goal, reproducible JEPA tasks, user ownership and credentials.
+**Default assignment:** run the CPU unit tests, inspect the synthetic temporal JEPA implementation, and execute a bounded falsifiable ablation. Commit code and reports with real results. Avoid generic agent harness engineering until the experiments provide meaningful evidence.
 
-## First run in a new Claude environment
+Commands:
 
-- Inspect the repo and report which tools actually exist (`devin`, `pi`, `python`, `git`); do not report imagined installations.
-- The top priority is **Devin CLI setup followed by human-controlled login**. See README section 1 for the verified official install command and `devin auth login --force-manual-token-flow` for remote login.
-- **Stop and hand the interactive terminal to the owner at authentication.** The owner signs in. Claude must not request, retrieve, display or save secrets.
-- If the hosted Claude environment cannot grant the owner direct terminal access, state that limitation explicitly. Provide a safe local-machine alternative; do not log in through an agent.
-- Once authentication is confirmed by the owner, check `devin auth status` and `devin models list`, ask the owner to select SWE-2 in Devin's `/model`, then pursue the small JEPA baseline.
-- Do not spawn indefinite loops or purchase cloud/model usage. Cloud runtime and model entitlements must be checked before unattended work.
+```bash
+python -m pip install -e '.[test]'
+python -m pytest -q
+python -m jepa_lab --config configs/smoke.json --output reports/smoke.json
+```
 
-The repo currently provides **instructions**, not an installed harness or implemented JEPA model. Begin with a minimal testable Python implementation rather than a generic agent framework.
+This repository is public. Do not publish secrets, model-service tokens or privileged login links. If the owner **explicitly** asks to configure Devin CLI, follow `CLOUD_SETUP.md`, let the owner authenticate personally in a terminal they control, and verify availability/pricing before running it. Devin CLI is optional, and model promotions do not mean unlimited cloud compute.
+
+**Do not claim this repo contains a trained Meta JEPA, an autonomous agent or recursively self-improving intelligence.** It is a reproducible synthetic research sandbox.
